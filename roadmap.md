@@ -1,0 +1,3 @@
+- [x] Replace the room image overlay with a reusable Three.js room scene
+- [x] Keep room tabs and material selection synchronized with the 3D floor
+- [x] Add architect-style controls and verify all material switches
