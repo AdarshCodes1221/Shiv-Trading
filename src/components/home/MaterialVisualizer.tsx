@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { company, visualizerMaterials } from "@/data/catalog";
 import type { VisualizerMaterial, MaterialApplication } from "@/data/catalog";
-import type { ViewAngle } from "@/components/three/MaterialScene";
+import type { ViewAngle, LightingMode } from "@/components/three/MaterialScene";
 import { useHydrated } from "@/components/site/useHydrated";
 import { Reveal } from "@/components/site/Reveal";
 import { EnquiryModal } from "@/components/home/EnquiryModal";
@@ -36,6 +36,7 @@ export function MaterialVisualizer() {
   const [selectedColorFilter, setSelectedColorFilter] = useState<string>("All");
   const [selectedFinishFilter, setSelectedFinishFilter] = useState<string>("All");
   const [viewAngle, setViewAngle] = useState<ViewAngle>("perspective");
+  const [lightingMode, setLightingMode] = useState<LightingMode>("daylight");
   const [activeApplicationType, setActiveApplicationType] = useState<"floor" | "wall" | "kitchen" | "bathroom">("floor");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedFinish, setSelectedFinish] = useState<string>("");
@@ -688,7 +689,7 @@ export function MaterialVisualizer() {
                 </h3>
               </div>
               <span className="text-xs text-muted-foreground font-mono">
-                {currentMaterial.dimensions.display}
+                Standard 4 × 4 Format · {currentMaterial.dimensions.display}
               </span>
             </div>
 
@@ -718,6 +719,7 @@ export function MaterialVisualizer() {
                           clearcoat={pbrParams.clearcoat}
                           metalness={currentMaterial.metalness}
                           viewAngle={viewAngle}
+                          lightingMode={lightingMode}
                         />
                       </div>
                     </Suspense>
@@ -783,7 +785,7 @@ export function MaterialVisualizer() {
                   {/* Interactive Hints Overlay bottom */}
                   <div className="pointer-events-none absolute bottom-4 inset-x-4 flex items-center justify-between text-[11px] text-muted-foreground/80 tracking-wider uppercase">
                     <span className="bg-background/80 px-2.5 py-1 backdrop-blur-xs border border-border/50 font-mono">
-                      {currentMaterial.dimensions.display}
+                      4 × 4 Square Format (1:1 Ratio)
                     </span>
                     <span className="hidden sm:inline bg-background/80 px-2.5 py-1 backdrop-blur-xs border border-border/50">
                       Drag to rotate · Scroll to zoom
@@ -854,29 +856,49 @@ export function MaterialVisualizer() {
                     </div>
                   </div>
 
-                  {/* Colour Variation Selector */}
+                  {/* Studio Lighting Environment Selector (Daylight, Warm Showroom, Cool Studio, Golden Hour) */}
                   <div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium text-foreground tracking-wider uppercase">
-                        Available Tone:
+                        Studio Lighting:
                       </span>
-                      <span className="text-muted-foreground">{currentColor}</span>
+                      <span className="text-primary font-semibold">
+                        {lightingMode === "daylight"
+                          ? "Daylight (6500K Sun)"
+                          : lightingMode === "warm"
+                          ? "Warm Showroom (3000K)"
+                          : lightingMode === "cool"
+                          ? "Cool Studio (5500K)"
+                          : "Golden Hour (Sunset)"}
+                      </span>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {currentMaterial.availableColors.map((c) => {
-                        const isSelected = c === currentColor;
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {[
+                        { id: "daylight", label: "Daylight", sub: "Natural Sun" },
+                        { id: "warm", label: "Warm Showroom", sub: "3000K Halogen" },
+                        { id: "cool", label: "Cool Studio", sub: "5500K LED" },
+                        { id: "golden", label: "Golden Hour", sub: "Warm Sunset" },
+                      ].map((light) => {
+                        const isSelected = lightingMode === light.id;
                         return (
                           <button
-                            key={c}
+                            key={light.id}
                             type="button"
-                            onClick={() => setSelectedColor(c)}
-                            className={`px-3 py-1.5 text-xs transition-all ${
+                            onClick={() => setLightingMode(light.id as LightingMode)}
+                            className={`p-2.5 text-left transition-all border ${
                               isSelected
-                                ? "border-foreground bg-foreground text-background font-medium"
-                                : "border border-border text-muted-foreground hover:text-foreground bg-card"
+                                ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs"
+                                : "border border-border text-muted-foreground hover:text-foreground bg-card hover:border-foreground/30"
                             }`}
                           >
-                            {c}
+                            <div className="text-xs tracking-wider uppercase">{light.label}</div>
+                            <div
+                              className={`text-[10px] mt-0.5 ${
+                                isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                              }`}
+                            >
+                              {light.sub}
+                            </div>
                           </button>
                         );
                       })}

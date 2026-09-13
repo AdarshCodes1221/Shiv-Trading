@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 export type ViewAngle = "perspective" | "front" | "side" | "reset";
+export type LightingMode = "daylight" | "warm" | "cool" | "golden";
 
 interface MaterialMeshProps {
   textureUrl: string;
@@ -18,8 +19,6 @@ interface MaterialMeshProps {
 
 function PhysicalMaterialMesh({
   textureUrl,
-  width,
-  height,
   thickness,
   roughness,
   clearcoat,
@@ -38,13 +37,12 @@ function PhysicalMaterialMesh({
     }
   }, [texture]);
 
-  // Normalize dimensions to display comfortably in viewport
-  const maxDim = Math.max(width, height);
-  const targetScale = 2.0;
-  const w = (width / maxDim) * targetScale;
-  const h = (height / maxDim) * targetScale;
-  const d = Math.max(0.04, Math.min(0.08, thickness * 2.5));
-  const bevelRadius = Math.min(0.015, w * 0.02);
+  // Strict 4x4 square tile format (1:1 proportion, zero elongated rectangles)
+  const size = 2.1;
+  const w = size;
+  const h = size;
+  const d = Math.max(0.04, Math.min(0.065, (thickness || 0.012) * 3));
+  const bevelRadius = 0.022;
 
   // Subtle floating idle oscillation
   useFrame((state) => {
@@ -61,8 +59,8 @@ function PhysicalMaterialMesh({
           roughness={roughness}
           metalness={metalness}
           clearcoat={clearcoat}
-          clearcoatRoughness={roughness * 0.4}
-          reflectivity={0.6}
+          clearcoatRoughness={roughness * 0.35}
+          reflectivity={0.65}
           envMapIntensity={1.2}
         />
       </RoundedBox>
@@ -108,6 +106,85 @@ function CameraController({ viewAngle }: CameraControllerProps) {
   );
 }
 
+interface LightingPreset {
+  ambientColor: string;
+  ambientIntensity: number;
+  mainColor: string;
+  mainIntensity: number;
+  mainPosition: [number, number, number];
+  fillColor: string;
+  fillIntensity: number;
+  fillPosition: [number, number, number];
+  rimColor: string;
+  rimIntensity: number;
+  rimPosition: [number, number, number];
+  shadowColor: string;
+  shadowOpacity: number;
+}
+
+const lightingPresets: Record<LightingMode, LightingPreset> = {
+  daylight: {
+    ambientColor: "#F8FAFC",
+    ambientIntensity: 0.85,
+    mainColor: "#FFFFFF",
+    mainIntensity: 1.45,
+    mainPosition: [3.5, 4.8, 3.5],
+    fillColor: "#E2E8F0",
+    fillIntensity: 0.5,
+    fillPosition: [-3, 2, 2],
+    rimColor: "#CBD5E1",
+    rimIntensity: 0.25,
+    rimPosition: [0, -2, -2],
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.45,
+  },
+  warm: {
+    ambientColor: "#FFF7ED",
+    ambientIntensity: 0.75,
+    mainColor: "#FFEDD5", // Warm showroom spotlight (3000K)
+    mainIntensity: 1.65,
+    mainPosition: [2.8, 5.0, 3.2],
+    fillColor: "#FED7AA",
+    fillIntensity: 0.55,
+    fillPosition: [-3, 2.5, 1.5],
+    rimColor: "#FDBA74",
+    rimIntensity: 0.35,
+    rimPosition: [0, -2, -2],
+    shadowColor: "#431407",
+    shadowOpacity: 0.5,
+  },
+  cool: {
+    ambientColor: "#F0F9FF",
+    ambientIntensity: 0.8,
+    mainColor: "#E0F2FE", // Modern crisp architectural LED (5500K)
+    mainIntensity: 1.45,
+    mainPosition: [3.2, 4.8, 3.8],
+    fillColor: "#BAE6FD",
+    fillIntensity: 0.45,
+    fillPosition: [-3, 2, 2],
+    rimColor: "#7DD3FC",
+    rimIntensity: 0.25,
+    rimPosition: [0, -2, -2],
+    shadowColor: "#082F49",
+    shadowOpacity: 0.45,
+  },
+  golden: {
+    ambientColor: "#3B2820",
+    ambientIntensity: 0.6,
+    mainColor: "#FB923C", // Low angle golden hour sunset light
+    mainIntensity: 1.9,
+    mainPosition: [4.5, 2.2, 2.8],
+    fillColor: "#EA580C",
+    fillIntensity: 0.35,
+    fillPosition: [-3, 1, 2],
+    rimColor: "#F97316",
+    rimIntensity: 0.45,
+    rimPosition: [0, -2, -2],
+    shadowColor: "#29140C",
+    shadowOpacity: 0.6,
+  },
+};
+
 export interface MaterialSceneProps {
   textureUrl: string;
   width: number;
@@ -117,6 +194,7 @@ export interface MaterialSceneProps {
   clearcoat: number;
   metalness: number;
   viewAngle?: ViewAngle;
+  lightingMode?: LightingMode;
   className?: string;
 }
 
@@ -129,8 +207,11 @@ export default function MaterialScene({
   clearcoat,
   metalness,
   viewAngle = "perspective",
+  lightingMode = "daylight",
   className = "",
 }: MaterialSceneProps) {
+  const preset = lightingPresets[lightingMode] ?? lightingPresets.daylight;
+
   return (
     <div className={`relative size-full select-none ${className}`}>
       <Canvas
@@ -143,17 +224,26 @@ export default function MaterialScene({
         }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.8} />
+        <ambientLight color={preset.ambientColor} intensity={preset.ambientIntensity} />
         <directionalLight
-          position={[3.5, 4.5, 3.5]}
-          intensity={1.3}
+          position={preset.mainPosition}
+          color={preset.mainColor}
+          intensity={preset.mainIntensity}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
           shadow-bias={-0.0001}
         />
-        <directionalLight position={[-3, 2, 2]} intensity={0.5} />
-        <directionalLight position={[0, -2, -2]} intensity={0.3} />
+        <directionalLight
+          position={preset.fillPosition}
+          color={preset.fillColor}
+          intensity={preset.fillIntensity}
+        />
+        <directionalLight
+          position={preset.rimPosition}
+          color={preset.rimColor}
+          intensity={preset.rimIntensity}
+        />
 
         <Suspense fallback={null}>
           <PhysicalMaterialMesh
@@ -167,12 +257,12 @@ export default function MaterialScene({
           />
           <ContactShadows
             position={[0, -1.15, 0]}
-            opacity={0.5}
+            opacity={preset.shadowOpacity}
             scale={4}
             blur={2.4}
             far={1.8}
             resolution={512}
-            color="#000000"
+            color={preset.shadowColor}
           />
         </Suspense>
 
