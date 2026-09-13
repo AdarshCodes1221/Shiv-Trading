@@ -6,6 +6,8 @@ import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
+  base: "/Shiv-Trading/",
+
   resolve: {
     alias: {
       "@": "/src",
@@ -19,6 +21,7 @@ export default defineConfig({
       "@tanstack/query-core",
     ],
   },
+
   plugins: [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
