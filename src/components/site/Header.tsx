@@ -77,7 +77,7 @@ export function Header() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <a
-            href={company.phoneTel}
+            href={`tel:${company.phoneTel}`}
             aria-label={`Call ${company.name} at ${company.phoneDisplay}`}
             className="hidden items-center gap-1.5 px-3 py-2 text-[11px] font-semibold tracking-[0.14em] uppercase text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
           >
@@ -127,7 +127,7 @@ export function Header() {
 
             <div className="mt-6 flex flex-col gap-3">
               <a
-                href={company.phoneTel}
+                href={`tel:${company.phoneTel}`}
                 className="flex items-center justify-center gap-2 border border-border py-3 text-xs tracking-[0.16em] uppercase font-semibold text-foreground hover:bg-muted"
               >
                 <Phone className="size-4 text-bronze" /> Call {company.phoneDisplay}

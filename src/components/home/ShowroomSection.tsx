@@ -99,7 +99,7 @@ export function ShowroomSection() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <a
-                    href={company.phoneTel}
+                    href={`tel:${company.phoneTel}`}
                     className="inline-flex items-center justify-center gap-2 border border-border py-3 text-xs tracking-[0.14em] uppercase font-semibold text-foreground hover:bg-muted transition-colors"
                   >
                     <Phone className="size-3.5 text-bronze" />

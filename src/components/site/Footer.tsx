@@ -172,7 +172,7 @@ export function Footer() {
               <div className="flex items-center gap-3">
                 <Phone className="size-4 text-bronze shrink-0" />
                 <a
-                  href={company.phoneTel}
+                  href={`tel:${company.phoneTel}`}
                   className="opacity-85 hover:opacity-100 hover:text-bronze transition-colors font-medium"
                 >
                   {company.phoneDisplay}
