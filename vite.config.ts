@@ -3,7 +3,6 @@ import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
 
 export default defineConfig({
   base: "/Shiv-Trading/",
@@ -24,13 +23,27 @@ export default defineConfig({
 
   plugins: [
     tailwindcss(),
-    tsConfigPaths({ projects: ["./tsconfig.json"] }),
+
+    tsConfigPaths({
+      projects: ["./tsconfig.json"],
+    }),
+
     tanstackStart({
-      server: { entry: "server" },
+      spa: {
+        enabled: true,
+        prerender: {
+          enabled: true,
+          outputPath: "/index.html",
+          crawlLinks: false,
+        },
+      },
     }),
-    nitro({
-      defaultPreset: "cloudflare-module",
-    }),
+
     viteReact(),
   ],
+
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+  },
 });
